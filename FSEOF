@@ -1,0 +1,33 @@
+from cobra.io import read_sbml_model, load_matlab_model, write_sbml_model, load_json_model
+import cobra
+cobra_config = cobra.Configuration()
+from cobra.manipulation import *
+from cobra import Reaction
+import os
+import sys
+
+from cobra import Reaction
+from cobra.flux_analysis import pfba
+
+
+from cameo.strain_design.deterministic.flux_variability_based import FSEOF      #第一遍报错，输两遍才有用
+
+
+model = read_sbml_model("/Users/Administrator/Desktop/modellearning/yeast-GEM.xml") # the reaction id should not contain white space!!
+solution = model.optimize()
+
+
+biomass_rxn_id = 'r_2111' # biomass
+test_rxn_id = 'r_1889'
+
+def sorted_fseof(model, biomass_rxn_id, test_rxn_id):    #这个算法的原理是从0开始试
+    # Revert the model to its original state:
+    model.reactions.get_by_id(biomass_rxn_id).lower_bound = 0
+    model.reactions.get_by_id(test_rxn_id).lower_bound = 0
+    model.objective = biomass_rxn_id
+    # Run analysis
+    fseof = FSEOF(model)
+    fseof_result = fseof.run(target=model.reactions.get_by_id(test_rxn_id))
+    fseof_df = fseof_result.data_frame
+
+    fseof_df           #这里就是结果了
